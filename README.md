@@ -44,6 +44,15 @@ cd comfyui-ltxv && source venv/bin/activate && python main.py --listen
 
 ---
 
+## Documentation
+
+| File | Contents |
+|------|----------|
+| [USER_GUIDE.md](USER_GUIDE.md) | How to use the workflow — every node, every parameter, plain English |
+| [SETUP_SNAPSHOT.md](SETUP_SNAPSHOT.md) | Exact versions of every component |
+
+---
+
 ## Why This Exists
 
 The official [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) plugin ships example workflows, but they target the **LTX-2 / LTX-2.3 series** — a 19B parameter model that requires 40GB+ VRAM. Those workflows use completely different nodes, encoders (Gemma 3 12B), and model formats. They will not work with the older 2B GGUF model.
