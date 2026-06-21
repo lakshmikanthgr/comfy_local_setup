@@ -49,6 +49,7 @@ cd comfyui-ltxv && source venv/bin/activate && python main.py --listen
 | File | Contents |
 |------|----------|
 | [USER_GUIDE.md](USER_GUIDE.md) | How to use the workflow — every node, every parameter, plain English |
+| [DUAL_IMAGE_GUIDE.md](DUAL_IMAGE_GUIDE.md) | Character + scene compositing — animate a person inside a background |
 | [FINETUNE_GUIDE.md](FINETUNE_GUIDE.md) | How to fine-tune the model on your own images and videos |
 | [SETUP_SNAPSHOT.md](SETUP_SNAPSHOT.md) | Exact versions of every component |
 
