@@ -2,8 +2,11 @@ FROM comfyui-nodes:latest
 
 WORKDIR /app/ComfyUI
 
-# Copy workflow into image so it appears in the browser immediately
+# Copy workflows into image so they appear in the browser immediately
 COPY workflows/ user/default/workflows/
+
+# Copy our custom nodes (rembg_node for background removal)
+COPY custom_nodes/ custom_nodes/
 
 # Model directories are volume-mounted at runtime — create empty placeholders
 RUN mkdir -p models/unet models/clip models/vae models/checkpoints \

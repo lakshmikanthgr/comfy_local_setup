@@ -45,3 +45,7 @@ RUN git clone https://github.com/kijai/ComfyUI-Florence2.git && \
     if [ -f ComfyUI-Florence2/requirements.txt ]; then \
         pip install -r ComfyUI-Florence2/requirements.txt; \
     fi
+
+# rembg — background removal library used by the custom rembg_node
+# u2net model weights (~170MB) download automatically on first use at runtime
+RUN pip install "rembg[gpu]==2.0.59"

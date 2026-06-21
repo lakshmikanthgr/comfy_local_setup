@@ -1,0 +1,294 @@
+{
+  "last_node_id": 15,
+  "last_link_id": 21,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UnetLoaderGGUF",
+      "pos": [50, 50],
+      "size": [360, 58],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "MODEL", "type": "MODEL", "links": [1], "slot_index": 0}],
+      "properties": {},
+      "widgets_values": ["ltxv-2b-0.9.6-distilled-q6_k.gguf"]
+    },
+    {
+      "id": 2,
+      "type": "ClipLoaderGGUF",
+      "pos": [50, 160],
+      "size": [360, 82],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "CLIP", "type": "CLIP", "links": [2, 3], "slot_index": 0}],
+      "properties": {},
+      "widgets_values": ["t5xxl_fp32-q4_0.gguf", "ltxv"]
+    },
+    {
+      "id": 3,
+      "type": "VaeGGUF",
+      "pos": [50, 290],
+      "size": [360, 58],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [{"name": "VAE", "type": "VAE", "links": [4, 5], "slot_index": 0}],
+      "properties": {},
+      "widgets_values": ["pig_video_enhanced_vae_fp32-f16.gguf"]
+    },
+    {
+      "id": 4,
+      "type": "LoadImage",
+      "pos": [50, 390],
+      "size": [315, 320],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [17], "slot_index": 0},
+        {"name": "MASK",  "type": "MASK",  "links": [20], "slot_index": 1}
+      ],
+      "title": "Character Image (PNG with transparent bg for best results)",
+      "properties": {},
+      "widgets_values": ["character.png", "image"]
+    },
+    {
+      "id": 13,
+      "type": "LoadImage",
+      "pos": [50, 760],
+      "size": [315, 320],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [18], "slot_index": 0},
+        {"name": "MASK",  "type": "MASK",  "links": [],   "slot_index": 1}
+      ],
+      "title": "Scene / Background Image",
+      "properties": {},
+      "widgets_values": ["scene.png", "image"]
+    },
+    {
+      "id": 14,
+      "type": "ImageScale",
+      "pos": [430, 390],
+      "size": [320, 130],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [{"name": "image", "type": "IMAGE", "link": 17}],
+      "outputs": [{"name": "IMAGE", "type": "IMAGE", "links": [19], "slot_index": 0}],
+      "title": "Scale Character to fit Scene",
+      "properties": {},
+      "widgets_values": ["bilinear", 256, 320, "center"]
+    },
+    {
+      "id": 15,
+      "type": "ImageCompositeMasked",
+      "pos": [430, 580],
+      "size": [340, 150],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {"name": "destination", "type": "IMAGE", "link": 18},
+        {"name": "source",      "type": "IMAGE", "link": 19},
+        {"name": "mask",        "type": "MASK",  "link": 20}
+      ],
+      "outputs": [{"name": "IMAGE", "type": "IMAGE", "links": [21], "slot_index": 0}],
+      "title": "Place Character onto Scene",
+      "properties": {},
+      "widgets_values": [256, 96, false]
+    },
+    {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [830, 50],
+      "size": [430, 140],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 2}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [7], "slot_index": 0}],
+      "title": "Positive Prompt",
+      "properties": {},
+      "widgets_values": ["A cheerful 3 year old girl laughing with pure joy, bright eyes sparkling, wide natural smile, rosy chubby cheeks lifting, head tilting side to side playfully, small shoulders bouncing with giggles, soft warm golden lighting on face, smooth natural child movement, lifelike facial animation, cinematic portrait, high detail, vibrant colors"]
+    },
+    {
+      "id": 6,
+      "type": "CLIPTextEncode",
+      "pos": [830, 240],
+      "size": [430, 100],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 3}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [8], "slot_index": 0}],
+      "title": "Negative Prompt",
+      "properties": {},
+      "widgets_values": ["worst quality, low quality, blurry, jittery, flickering, distorted face, deformed features, unnatural motion, inconsistent motion, choppy, artifacts, overexposed, dark, dull colors, static, frozen, lifeless expression, morphing face, multiple faces"]
+    },
+    {
+      "id": 7,
+      "type": "LTXVConditioning",
+      "pos": [1320, 145],
+      "size": [230, 94],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {"name": "positive", "type": "CONDITIONING", "link": 7},
+        {"name": "negative", "type": "CONDITIONING", "link": 8}
+      ],
+      "outputs": [
+        {"name": "positive", "type": "CONDITIONING", "links": [9],  "slot_index": 0},
+        {"name": "negative", "type": "CONDITIONING", "links": [10], "slot_index": 1}
+      ],
+      "properties": {},
+      "widgets_values": [25.0]
+    },
+    {
+      "id": 8,
+      "type": "LTXVImgToVideo",
+      "pos": [1320, 290],
+      "size": [280, 210],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {"name": "positive", "type": "CONDITIONING", "link": 9},
+        {"name": "negative", "type": "CONDITIONING", "link": 10},
+        {"name": "vae",      "type": "VAE",          "link": 4},
+        {"name": "image",    "type": "IMAGE",         "link": 21}
+      ],
+      "outputs": [
+        {"name": "positive", "type": "CONDITIONING", "links": [11], "slot_index": 0},
+        {"name": "negative", "type": "CONDITIONING", "links": [12], "slot_index": 1},
+        {"name": "latent",   "type": "LATENT",       "links": [13], "slot_index": 2}
+      ],
+      "properties": {},
+      "widgets_values": [768, 512, 249, 1, 1.0]
+    },
+    {
+      "id": 9,
+      "type": "KSampler",
+      "pos": [1660, 145],
+      "size": [315, 262],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {"name": "model",        "type": "MODEL",       "link": 1},
+        {"name": "positive",     "type": "CONDITIONING","link": 11},
+        {"name": "negative",     "type": "CONDITIONING","link": 12},
+        {"name": "latent_image", "type": "LATENT",      "link": 13}
+      ],
+      "outputs": [{"name": "LATENT", "type": "LATENT", "links": [14], "slot_index": 0}],
+      "properties": {},
+      "widgets_values": [42, "fixed", 8, 1.0, "euler", "sgm_uniform", 1.0]
+    },
+    {
+      "id": 10,
+      "type": "VAEDecode",
+      "pos": [2040, 145],
+      "size": [210, 46],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {"name": "samples", "type": "LATENT", "link": 14},
+        {"name": "vae",     "type": "VAE",    "link": 5}
+      ],
+      "outputs": [{"name": "IMAGE", "type": "IMAGE", "links": [15], "slot_index": 0}],
+      "properties": {},
+      "widgets_values": []
+    },
+    {
+      "id": 11,
+      "type": "CreateVideo",
+      "pos": [2310, 145],
+      "size": [230, 78],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 15},
+        {"name": "audio",  "shape": 7, "type": "AUDIO", "link": null}
+      ],
+      "outputs": [{"name": "VIDEO", "type": "VIDEO", "links": [16], "slot_index": 0}],
+      "properties": {},
+      "widgets_values": [25]
+    },
+    {
+      "id": 12,
+      "type": "SaveVideo",
+      "pos": [2600, 145],
+      "size": [450, 160],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [{"name": "video", "type": "VIDEO", "link": 16}],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": ["video/ltxv_dual_image", "auto", "auto"]
+    }
+  ],
+  "links": [
+    [1,  1,  0, 9,  0, "MODEL"],
+    [2,  2,  0, 5,  0, "CLIP"],
+    [3,  2,  0, 6,  0, "CLIP"],
+    [4,  3,  0, 8,  2, "VAE"],
+    [5,  3,  0, 10, 1, "VAE"],
+    [7,  5,  0, 7,  0, "CONDITIONING"],
+    [8,  6,  0, 7,  1, "CONDITIONING"],
+    [9,  7,  0, 8,  0, "CONDITIONING"],
+    [10, 7,  1, 8,  1, "CONDITIONING"],
+    [11, 8,  0, 9,  1, "CONDITIONING"],
+    [12, 8,  1, 9,  2, "CONDITIONING"],
+    [13, 8,  2, 9,  3, "LATENT"],
+    [14, 9,  0, 10, 0, "LATENT"],
+    [15, 10, 0, 11, 0, "IMAGE"],
+    [16, 11, 0, 12, 0, "VIDEO"],
+    [17, 4,  0, 14, 0, "IMAGE"],
+    [18, 13, 0, 15, 0, "IMAGE"],
+    [19, 14, 0, 15, 1, "IMAGE"],
+    [20, 4,  1, 15, 2, "MASK"],
+    [21, 15, 0, 8,  3, "IMAGE"]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "Model Loaders",
+      "bounding": [30, 30, 410, 760],
+      "color": "#3f789e",
+      "font_size": 16,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "Image Compositing",
+      "bounding": [30, 370, 790, 560],
+      "color": "#7e5e3f",
+      "font_size": 16,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "Text + Conditioning",
+      "bounding": [810, 30, 780, 420],
+      "color": "#3f789e",
+      "font_size": 16,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

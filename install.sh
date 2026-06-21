@@ -47,7 +47,8 @@ pip install --quiet \
     numpy==2.2.6 \
     "safetensors==0.8.0rc0" \
     torchsde==0.2.6 \
-    "transformers==5.7.0"
+    "transformers==5.7.0" \
+    "rembg[gpu]==2.0.59"
 
 # ── 3. Custom nodes ───────────────────────────────────────────────────────────
 echo ""
@@ -84,12 +85,13 @@ git -C ComfyUI-Florence2 checkout 9ece3de914214c5f581d725167bc9d0eeb0d1120
 
 cd ..
 
-# ── 4. Workflow ───────────────────────────────────────────────────────────────
+# ── 4. Workflows and custom nodes ─────────────────────────────────────────────
 echo ""
-echo "==> Copying workflow..."
+echo "==> Copying workflows and custom nodes..."
 mkdir -p user/default/workflows
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cp "$SCRIPT_DIR/workflows/ltxv_096_gguf_i2v.json" user/default/workflows/
+cp "$SCRIPT_DIR/workflows/"*.json user/default/workflows/
+cp -r "$SCRIPT_DIR/custom_nodes/rembg_node" custom_nodes/
 
 # ── 5. Model directory structure ──────────────────────────────────────────────
 echo ""
