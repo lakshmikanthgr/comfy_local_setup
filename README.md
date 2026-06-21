@@ -4,28 +4,43 @@ A working ComfyUI workflow for generating 10-second videos from a single image u
 
 ---
 
-## Quick Start (Reproduce from Scratch)
+## Quick Start
+
+### Option A — Docker (recommended, fully portable)
+
+> **Requirements**: Docker, [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html), GPU 10GB+ VRAM
 
 ```bash
 # 1. Clone this repo
 git clone https://github.com/lakshmikanthgr/comfy_local_setup.git
 cd comfy_local_setup
 
-# 2. Run the installer (takes ~5-10 min depending on connection)
-bash install.sh
+# 2. Build all 4 images (takes 10–20 min on first run, cached after)
+bash docker-build.sh
 
-# 3. Download the 3 model files into the printed directories
-#    (see output of install.sh for exact paths)
+# 3. Download the 3 model files (see Models section below)
+#    and point MODELS_DIR at the folder containing unet/ clip/ vae/
 
-# 4. Start ComfyUI
-cd comfyui-ltxv
-source venv/bin/activate
-python main.py --listen
+# 4. Start
+export MODELS_DIR=/path/to/your/models
+docker compose up
+
+# Open http://localhost:8188
 ```
 
-The workflow `ltxv_096_gguf_i2v` will be ready in the workflow browser. Upload your image to the `LoadImage` node and queue.
+The workflow `ltxv_096_gguf_i2v` appears in the workflow browser automatically.
 
-> **Requirements**: Linux, Python 3.10+, CUDA 12.1, GPU with 10GB+ VRAM
+### Option B — Native install (Linux only)
+
+> **Requirements**: Linux, Python 3.10+, CUDA 12.1, GPU 10GB+ VRAM
+
+```bash
+git clone https://github.com/lakshmikanthgr/comfy_local_setup.git
+cd comfy_local_setup
+bash install.sh
+# Download models, then:
+cd comfyui-ltxv && source venv/bin/activate && python main.py --listen
+```
 
 ---
 

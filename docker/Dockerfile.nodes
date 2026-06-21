@@ -1,0 +1,47 @@
+FROM comfyui-core:latest
+
+WORKDIR /app/ComfyUI/custom_nodes
+
+# city96/ComfyUI-GGUF — UNet GGUF loader (llama.cpp-based)
+RUN git clone https://github.com/city96/ComfyUI-GGUF.git && \
+    git -C ComfyUI-GGUF checkout 6ea2651e7df66d7585f6ffee804b20e92fb38b8a && \
+    pip install -r ComfyUI-GGUF/requirements.txt
+
+# calcuis/gguf — CLIP and VAE GGUF loader (non-llama.cpp format)
+RUN git clone https://github.com/calcuis/gguf.git calcuis-gguf && \
+    git -C calcuis-gguf checkout 2902c546c18231e4323fa2c0d63455c34ed79e5a
+
+# Lightricks/ComfyUI-LTXVideo — LTXVImgToVideo, LTXVConditioning nodes
+RUN git clone https://github.com/Lightricks/ComfyUI-LTXVideo.git && \
+    git -C ComfyUI-LTXVideo checkout 4f45fd6c222eb06eb3e46605da62e7c889e4be5c && \
+    if [ -f ComfyUI-LTXVideo/requirements.txt ]; then \
+        pip install -r ComfyUI-LTXVideo/requirements.txt; \
+    fi
+
+# ComfyUI-Manager — node manager
+RUN git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
+    git -C ComfyUI-Manager checkout 8d5c12037f873c2f9e059e4f9c409a2835a9b8cf && \
+    if [ -f ComfyUI-Manager/requirements.txt ]; then \
+        pip install -r ComfyUI-Manager/requirements.txt; \
+    fi
+
+# ComfyUI-VideoHelperSuite — video utilities
+RUN git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
+    git -C ComfyUI-VideoHelperSuite checkout 2984ec4c4b93292421888f38db74a5e8802a8ff8 && \
+    if [ -f ComfyUI-VideoHelperSuite/requirements.txt ]; then \
+        pip install -r ComfyUI-VideoHelperSuite/requirements.txt; \
+    fi
+
+# ComfyUI-WanVideoWrapper
+RUN git clone https://github.com/Kijai/ComfyUI-WanVideoWrapper.git && \
+    git -C ComfyUI-WanVideoWrapper checkout df8f3e49daaad117cf3090cc916c83f3d001494c && \
+    if [ -f ComfyUI-WanVideoWrapper/requirements.txt ]; then \
+        pip install -r ComfyUI-WanVideoWrapper/requirements.txt; \
+    fi
+
+# ComfyUI-Florence2
+RUN git clone https://github.com/kijai/ComfyUI-Florence2.git && \
+    git -C ComfyUI-Florence2 checkout 9ece3de914214c5f581d725167bc9d0eeb0d1120 && \
+    if [ -f ComfyUI-Florence2/requirements.txt ]; then \
+        pip install -r ComfyUI-Florence2/requirements.txt; \
+    fi
