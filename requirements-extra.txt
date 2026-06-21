@@ -1,0 +1,11 @@
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+torchaudio==2.5.1+cu121
+accelerate==1.13.0
+diffusers==0.38.0
+gguf==0.18.0
+gguf-connector==3.5.4
+numpy==2.2.6
+safetensors==0.8.0rc0
+torchsde==0.2.6
+transformers==5.7.0

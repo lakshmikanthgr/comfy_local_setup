@@ -4,6 +4,31 @@ A working ComfyUI workflow for generating 10-second videos from a single image u
 
 ---
 
+## Quick Start (Reproduce from Scratch)
+
+```bash
+# 1. Clone this repo
+git clone https://github.com/lakshmikanthgr/comfy_local_setup.git
+cd comfy_local_setup
+
+# 2. Run the installer (takes ~5-10 min depending on connection)
+bash install.sh
+
+# 3. Download the 3 model files into the printed directories
+#    (see output of install.sh for exact paths)
+
+# 4. Start ComfyUI
+cd comfyui-ltxv
+source venv/bin/activate
+python main.py --listen
+```
+
+The workflow `ltxv_096_gguf_i2v` will be ready in the workflow browser. Upload your image to the `LoadImage` node and queue.
+
+> **Requirements**: Linux, Python 3.10+, CUDA 12.1, GPU with 10GB+ VRAM
+
+---
+
 ## Why This Exists
 
 The official [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) plugin ships example workflows, but they target the **LTX-2 / LTX-2.3 series** — a 19B parameter model that requires 40GB+ VRAM. Those workflows use completely different nodes, encoders (Gemma 3 12B), and model formats. They will not work with the older 2B GGUF model.
