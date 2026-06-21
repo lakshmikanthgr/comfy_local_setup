@@ -1,0 +1,63 @@
+Step 1 — Make sure ComfyUI is running
+
+cd /home/laks/projects/comfyui-fresh-test
+source venv/bin/activate
+python main.py --listen --port 8189
+
+---
+Step 2 — Put your images in a folder
+
+Create a folder and drop all your photos in it:
+
+mkdir ~/yoga_day_images
+# copy your JPG/PNG files into it
+
+Supported formats: .jpg, .jpeg, .png, .webp
+
+---
+Step 3 — Run the script
+
+cd /home/laks/projects/comfy_local_setup
+
+python3 yoga_day_batch.py ~/yoga_day_images
+
+That's it. The script will:
+1. Find every image in that folder
+2. Upload each one to ComfyUI automatically
+3. Queue a 10-second video for each — person saying "Happy International Yoga Day!" with namaste gesture
+
+---
+Step 4 — Watch progress
+
+Open http://localhost:8189 in your browser — you'll see the queue running.
+
+---
+Step 5 — Collect output videos
+
+/home/laks/projects/comfyui-fresh-test/output/video/yoga_day/
+
+One .mp4 per image, named automatically.
+
+---
+Optional flags
+
+# Faster test run — 4 sec videos instead of 10 sec
+python3 yoga_day_batch.py ~/yoga_day_images --frames 97
+
+# Different motion variation
+python3 yoga_day_batch.py ~/yoga_day_images --seed 200
+
+---
+Time estimate
+
+┌────────┬───────────┬────────────┐
+│ Images │  Frames   │ Total time │
+├────────┼───────────┼────────────┤
+│ 5      │ 97 (4s)   │ ~40 min    │
+├────────┼───────────┼────────────┤
+│ 5      │ 249 (10s) │ ~2 hours   │
+├────────┼───────────┼────────────┤
+│ 20     │ 249 (10s) │ ~8 hours   │
+└────────┴───────────┴────────────┘
+
+Run it before you go to sleep for a large batch.
