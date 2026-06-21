@@ -1,233 +1,288 @@
 # LTX-Video 0.9.6 GGUF — Image-to-Video on RTX 3060 12GB
 
-A working ComfyUI workflow for generating 10-second videos from a single image using the LTX-Video 0.9.6 2B model in GGUF format. Built specifically for consumer GPUs with 8–12GB VRAM.
+A working ComfyUI setup for generating videos from images using the LTX-Video 0.9.6 2B model in GGUF format. Built specifically for consumer GPUs with 8–12GB VRAM. Includes three workflows: single image, manual dual-image composite, and automatic background removal + scene compositing.
 
 ---
 
-## Quick Start
+## Branches
 
-> **This is the `feature/bg-removal-compositing` branch.**
-> It includes automatic background removal for the character + scene workflow.
+| Branch | What it adds |
+|--------|-------------|
+| `master` | Single image → video workflow only |
+| `feature/bg-removal-compositing` | + automatic background removal and character-into-scene compositing |
+
+> **This README covers the `feature/bg-removal-compositing` branch.**
 > Clone this branch specifically:
 > ```bash
 > git clone -b feature/bg-removal-compositing \
 >     https://github.com/lakshmikanthgr/comfy_local_setup.git
 > ```
 
-### Option A — Docker (recommended, fully portable)
+---
 
-> **Requirements**: Docker, [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html), GPU 10GB+ VRAM
+## Quick Start
 
-```bash
-# 1. Clone this repo
-git clone https://github.com/lakshmikanthgr/comfy_local_setup.git
-cd comfy_local_setup
-
-# 2. Build all 4 images (takes 10–20 min on first run, cached after)
-bash docker-build.sh
-
-# 3. Download the 3 model files (see Models section below)
-#    and point MODELS_DIR at the folder containing unet/ clip/ vae/
-
-# 4. Start
-export MODELS_DIR=/path/to/your/models
-docker compose up
-
-# Open http://localhost:8188
-```
-
-The workflow `ltxv_096_gguf_i2v` appears in the workflow browser automatically.
-
-### Option B — Native install (Linux only)
+### Option A — Native install (Linux only)
 
 > **Requirements**: Linux, Python 3.10+, CUDA 12.1, GPU 10GB+ VRAM
 
 ```bash
-# Clone this specific branch
 git clone -b feature/bg-removal-compositing \
     https://github.com/lakshmikanthgr/comfy_local_setup.git
 cd comfy_local_setup
 
-# Run the installer — handles system packages, venv, all custom nodes,
-# rembg, workflows, and runs a verification check at the end
+# Installs ComfyUI, venv, all custom nodes, rembg, workflows, runs verification
 bash install.sh
 
-# Download 3 model files (see installer output for exact paths)
+# Download 3 model files (installer prints exact paths)
 # Then start:
 cd comfyui-ltxv && source venv/bin/activate && python main.py --listen
 ```
 
-The installer prints a pass/fail check for every component at the end.
-If any check fails, fix it before starting ComfyUI.
+Open: http://localhost:8188
 
----
+### Option B — Docker (fully portable)
 
-## Documentation
-
-| File | Contents |
-|------|----------|
-| [USER_GUIDE.md](USER_GUIDE.md) | How to use the workflow — every node, every parameter, plain English |
-| [DUAL_IMAGE_GUIDE.md](DUAL_IMAGE_GUIDE.md) | Character + scene — animate a person inside a background with auto background removal |
-| [FINETUNE_GUIDE.md](FINETUNE_GUIDE.md) | How to fine-tune the model on your own images and videos |
-| [SETUP_SNAPSHOT.md](SETUP_SNAPSHOT.md) | Exact versions of every component |
-
----
-
-## Why This Exists
-
-The official [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) plugin ships example workflows, but they target the **LTX-2 / LTX-2.3 series** — a 19B parameter model that requires 40GB+ VRAM. Those workflows use completely different nodes, encoders (Gemma 3 12B), and model formats. They will not work with the older 2B GGUF model.
-
-This setup uses the **ltxv-2b-0.9.6** family — the original smaller LTX-Video model — quantized to GGUF format so it runs on a 12GB RTX 3060.
-
----
-
-## How This Differs from the Official Workflow
-
-| | Official ComfyUI-LTXVideo (example workflows) | This Setup |
-|---|---|---|
-| **Model** | LTX-2 / LTX-2.3 (19B safetensors) | ltxv-2b-0.9.6 (2B GGUF) |
-| **VRAM needed** | 40GB+ | ~10–12GB |
-| **Text encoder** | Gemma 3 12B | T5-XXL (Q4_0 GGUF) |
-| **UNet loader** | CheckpointLoaderSimple | UnetLoaderGGUF (city96) |
-| **CLIP loader** | native CLIPLoader | ClipLoaderGGUF (calcuis) |
-| **VAE loader** | VAELoader (safetensors) | VaeGGUF (calcuis) |
-| **Sampler node** | LTXVBaseSampler (custom, GUIDER-based) | KSampler (core ComfyUI) |
-| **I2V node** | LTXVImgToVideoConditionOnly | LTXVImgToVideo (core ComfyUI) |
-
-### The critical problem: two incompatible CLIP loaders
-
-There are two separate GGUF ecosystems for ComfyUI:
-
-- **city96/ComfyUI-GGUF** — uses llama.cpp under the hood. Its `CLIPLoaderGGUF` only works with llama.cpp-compatible GGUF files.
-- **calcuis/gguf** — uses its own `gguf_connector` reader. Its `ClipLoaderGGUF` (lowercase `l`) handles a different GGUF format used by the calcuis model releases.
-
-The `t5xxl_fp32-q4_0.gguf` file in this setup is in calcuis format. Using city96's `CLIPLoaderGGUF` on it throws:
-
-```
-ValueError: This gguf file is incompatible with llama.cpp!
-```
-
-**Fix**: use calcuis's `ClipLoaderGGUF` node instead. Both nodes coexist without conflict because their registered names differ (`CLIPLoaderGGUF` vs `ClipLoaderGGUF`).
-
-### Why LTXVImgToVideo (core) instead of LTXVImgToVideoConditionOnly (custom)
-
-The ComfyUI-LTXVideo plugin's `LTXVImgToVideoConditionOnly` node accesses `vae.downscale_index_formula` — an attribute specific to the safetensors LTX-Video VAE object. A GGUF-loaded VAE from calcuis doesn't have this attribute, causing an `AttributeError` at runtime.
-
-The core ComfyUI `LTXVImgToVideo` node (in `comfy_extras/nodes_lt.py`) does the same thing — encodes the image, creates an empty latent, and applies the image mask — but without accessing any VAE-specific internal attributes. It's simpler and GGUF-safe.
-
----
-
-## Setup
-
-### 1. Clone ComfyUI
+> **Requirements**: Docker, NVIDIA Container Toolkit, GPU 10GB+ VRAM
 
 ```bash
-git clone https://github.com/comfyanonymous/ComfyUI.git
-cd ComfyUI
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+git clone -b feature/bg-removal-compositing \
+    https://github.com/lakshmikanthgr/comfy_local_setup.git
+cd comfy_local_setup
+
+# Build all 4 images (10–20 min first run, cached after)
+bash docker-build.sh
+
+export MODELS_DIR=/path/to/your/models   # must contain unet/ clip/ vae/
+docker compose up
 ```
 
-### 2. Install custom nodes
+Open: http://localhost:8188
 
-```bash
-cd custom_nodes
+---
 
-# GGUF UNet loader (city96) — for the main model
-git clone https://github.com/city96/ComfyUI-GGUF.git
-cd ComfyUI-GGUF && git checkout 6ea2651e7df66d7585f6ffee804b20e92fb38b8a && cd ..
+## Models Required
 
-# calcuis GGUF toolkit — for CLIP and VAE GGUF loading
-git clone https://github.com/calcuis/gguf.git calcuis-gguf
-cd calcuis-gguf && git checkout 2902c546c18231e4323fa2c0d63455c34ed79e5a && cd ..
+Download all three from **huggingface.co/calcuis** and place them as shown:
 
-# LTXVideo plugin — provides LTXVImgToVideo and LTXVConditioning nodes
-git clone https://github.com/Lightricks/ComfyUI-LTXVideo.git
-cd ComfyUI-LTXVideo && git checkout 4f45fd6c222eb06eb3e46605da62e7c889e4be5c && cd ..
-
-cd ..
-```
-
-Install Python dependencies:
-
-```bash
-pip install gguf-connector
-```
-
-### 3. Download models
-
-| File | Place in |
-|------|----------|
+| File | Folder |
+|------|--------|
 | `ltxv-2b-0.9.6-distilled-q6_k.gguf` | `models/unet/` |
 | `t5xxl_fp32-q4_0.gguf` | `models/clip/` |
 | `pig_video_enhanced_vae_fp32-f16.gguf` | `models/vae/` |
 
-All three are available from the calcuis releases on Hugging Face.
+---
 
-### 4. Load the workflow
+## Workflows
 
-Copy `user/default/workflows/ltxv_096_gguf_i2v.json` into your ComfyUI `user/default/workflows/` folder. It will appear in the workflow browser automatically.
+### Where the JSON files live
+
+After `install.sh` runs, workflows are copied to ComfyUI's workflow browser directory:
+
+```
+<install-dir>/user/default/workflows/
+├── ltxv_096_gguf_i2v.json                 ← single image → video
+├── ltxv_096_gguf_i2v_dual_image.json      ← manual composite (two images)
+└── ltxv_096_gguf_scene_character.json     ← auto BG removal + scene
+```
+
+The source files live in this repo at:
+
+```
+comfy_local_setup/workflows/
+├── ltxv_096_gguf_i2v.json
+├── ltxv_096_gguf_i2v_dual_image.json
+└── ltxv_096_gguf_scene_character.json
+```
+
+They appear automatically in the ComfyUI workflow browser (top-right menu → "Browse Workflows"). You can also drag-and-drop a JSON file onto the ComfyUI canvas to load it.
 
 ---
 
-## Workflow Overview
+### Workflow 1 — Single Image to Video (`ltxv_096_gguf_i2v`)
 
+Animates one image into a ~10-second video.
+
+**Pipeline:**
 ```
-[UnetLoaderGGUF]          loads ltxv-2b-0.9.6-distilled-q6_k.gguf
-[ClipLoaderGGUF]          loads t5xxl_fp32-q4_0.gguf, type=ltxv
-[VaeGGUF]                 loads pig_video_enhanced_vae_fp32-f16.gguf
-[LoadImage]               your input image
-       |
-[CLIPTextEncode] x2 ──► [LTXVConditioning]   injects frame_rate=25
-                                  |
-                         [LTXVImgToVideo]     768×512, 249 frames (~10 sec), strength=1.0
-                                  |
-                          [KSampler]          steps=8, cfg=1.0, euler, sgm_uniform
-                                  |
-                          [VAEDecode]
-                                  |
-                         [CreateVideo] ──► [SaveVideo]
-                                           output/video/ltxv_i2v/
-```
-
-### Sampler settings explained
-
-The `ltxv-2b-0.9.6-distilled` model is a **distilled** model. Distillation compresses many denoising steps into fewer, so:
-
-- `steps=8` is sufficient (6–12 works, more does not help)
-- `cfg=1.0` — classifier-free guidance scale at 1.0 means guidance is effectively off; distilled models bake guidance in
-- `euler` + `sgm_uniform` — the recommended scheduler for LTX-Video distilled variants
-
-Using higher CFG or more steps with a distilled model produces worse results, not better.
-
-### Frame count constraint
-
-LTX-Video's temporal VAE compresses time by a factor of 8. The frame count must satisfy:
-
-```
-length = 8n + 1   (e.g. 9, 17, 25, 33, ..., 97, 177, 201, 225, 249)
+[UnetLoaderGGUF] ──────────────────────────────────────────► model
+[ClipLoaderGGUF] ──────────────────────────────────────────► clip
+[VaeGGUF] ─────────────────────────────────────────────────► vae
+[LoadImage] ───────────────────────────────────────────────► image
+[CLIPTextEncode] (positive) ──► [LTXVConditioning] ────────► conditioning
+[CLIPTextEncode] (negative)  ──► [LTXVConditioning]
+                                          │
+                                 [LTXVImgToVideo] (768×512, 249 frames)
+                                          │
+                                    [KSampler] (8 steps, cfg=1.0)
+                                          │
+                                    [VAEDecode]
+                                          │
+                                  [CreateVideo] ──► [SaveVideo]
 ```
 
-At 25fps:
+**How to use:**
+1. Load the workflow in ComfyUI
+2. Click the `LoadImage` node and upload your image
+3. Edit the positive/negative prompt in the two `CLIPTextEncode` nodes
+4. Click **Queue Prompt**
+5. Output saved to `output/video/ltxv_i2v/`
 
-| Frames | Duration |
-|--------|----------|
-| 97     | ~3.9 sec |
-| 177    | ~7.1 sec |
-| 201    | ~8.0 sec |
-| 225    | ~9.0 sec |
-| 249    | ~9.96 sec |
+---
 
-### Resolution constraint
+### Workflow 2 — Dual Image Manual Composite (`ltxv_096_gguf_i2v_dual_image`)
 
-Width and height must both be divisible by 32 (ideally 64). For portrait/passport images use 512×768. For landscape use 768×512.
+Manually paste a character onto a scene background, then animate. You control the exact position and size.
+
+**Extra nodes vs Workflow 1:**
+```
+[LoadImage] (character) ──► [ImageScale] ──────────────────► source
+[LoadImage] (scene)     ──────────────────────────────────► destination
+                                    │
+                         [ImageCompositeMasked] ───────────► [LTXVImgToVideo]
+```
+
+**How to use:**
+1. Upload your character image to the first `LoadImage` node
+2. Upload your scene/background image to the second `LoadImage` node
+3. Adjust `x`, `y` in `ImageCompositeMasked` to position the character
+4. Adjust `width`/`height` in `ImageScale` to resize the character
+5. Queue Prompt
+
+---
+
+### Workflow 3 — Auto Background Removal + Scene (`ltxv_096_gguf_scene_character`)
+
+Automatically removes the background from the character image using rembg, then composites them onto the scene before generating the video. This is the recommended workflow for putting a person into a different background.
+
+**Full pipeline:**
+```
+[LoadImage] (character) ──► [RemoveBackgroundRembg] ──► image (no bg)
+                                       │                    │
+                                       └──► mask            │
+                                                            ▼
+[LoadImage] (scene) ───────────────► [ImageCompositeMasked]
+                                                │
+                                       [LTXVImgToVideo] (768×512, 249 frames)
+                                                │
+                                          [KSampler]
+                                                │
+                                          [VAEDecode]
+                                                │
+                                        [CreateVideo] ──► [SaveVideo]
+```
+
+**How to use:**
+1. Load `ltxv_096_gguf_scene_character` in ComfyUI
+2. Click the first `LoadImage` node → upload your **character** photo (person, subject)
+3. Click the second `LoadImage` node → upload your **scene/background** image
+4. Edit positive/negative prompts
+5. Queue Prompt — background removal runs automatically
+6. Output saved to `output/video/ltxv_scene_character/`
+
+**Node: RemoveBackgroundRembg**
+
+This is a custom node in `custom_nodes/rembg_node/`. It wraps the `rembg` library.
+
+| Parameter | Options | Default |
+|-----------|---------|---------|
+| `model` | `u2net_human_seg`, `u2net`, `isnet-general-use` | `u2net_human_seg` |
+
+- Use `u2net_human_seg` for photos of people (best results)
+- Use `u2net` for general objects
+- Use `isnet-general-use` for complex scenes
+
+On first run it downloads the model (~176MB to `~/.u2net/`). Subsequent runs use the cache.
+
+**Outputs:** IMAGE (subject with transparent background) + MASK (alpha channel)
+
+---
+
+## Queuing Workflows via API (`queue_test.py`)
+
+The repo includes `queue_test.py` — a script to submit the scene+character workflow to ComfyUI programmatically without opening the browser.
+
+```bash
+# Edit these two lines at the top of queue_test.py:
+CHARACTER_IMAGE = "your_character.jpg"   # filename in ComfyUI's input/ folder
+SCENE_IMAGE     = "your_scene.png"       # filename in ComfyUI's input/ folder
+
+# Upload images first (ComfyUI must be running):
+# Drop them into <install-dir>/input/  OR upload via the UI
+
+# Then queue:
+python3 queue_test.py
+```
+
+Output:
+```json
+{
+  "prompt_id": "3fe9a6a9-...",
+  "number": 0,
+  "node_errors": {}
+}
+Queued! Prompt ID: 3fe9a6a9-...
+Watch progress at: http://localhost:8189
+```
+
+The script reads the workflow JSON, builds the ComfyUI API prompt format, and POSTs to `/prompt`. It prints the inputs for key nodes so you can verify the wiring before it runs.
+
+---
+
+## Sampler Settings
+
+These are fixed in all three workflows and should not be changed arbitrarily:
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| `steps` | 8 | Distilled model — more steps don't help |
+| `cfg` | 1.0 | Guidance is baked in; higher values hurt quality |
+| `sampler` | euler | Recommended for LTX-Video distilled |
+| `scheduler` | sgm_uniform | Recommended for LTX-Video distilled |
+
+## Frame Count and Duration
+
+LTX-Video's temporal VAE requires frame count to satisfy `8n + 1`:
+
+| Frames | Duration @ 25fps | VRAM fit on 3060 |
+|--------|-----------------|-----------------|
+| 97 | ~3.9 sec | Yes |
+| 177 | ~7.1 sec | Yes |
+| 201 | ~8.0 sec | Yes |
+| 225 | ~9.0 sec | Yes |
+| 249 | ~9.96 sec | Yes (tight) |
+
+Default is 249. Reduce to 97 for fast iteration while testing prompts.
+
+## Resolution
+
+Width and height must be divisible by 32 (ideally 64).
+
+| Use case | Resolution |
+|----------|-----------|
+| Portrait / passport photo | 512×768 |
+| Landscape / scene | 768×512 |
+
+---
+
+## Generation Time (RTX 3060 12GB)
+
+| Stage | Time |
+|-------|------|
+| Background removal (rembg) | ~10–30 sec |
+| Model load (GGUF) | ~60 sec |
+| KSampler (8 steps, 249 frames) | ~15–20 min |
+| VAE decode | ~3–5 min |
+| Video encode + save | ~30 sec |
+| **Total** | **~20–30 min** |
+
+Drop to 97 frames for ~5–8 min turnaround.
 
 ---
 
 ## Prompting Guide
 
-LTX-Video 0.9.6 responds well to explicit motion descriptions. Describe what moves, not just what the scene looks like.
+Describe motion explicitly — LTX-Video responds to what moves, not just the scene.
 
 **Positive prompt structure:**
 ```
@@ -250,9 +305,24 @@ static, frozen, lifeless expression, morphing face, multiple faces
 ```
 
 **Tips:**
-- For close-up/passport photos: focus on facial animation (laughing, blinking, head tilt) — body movement can't be generated from what isn't in frame
-- Avoid vague terms like "dynamic" or "motion" — describe the actual movement explicitly
-- Changing the seed often produces more variation than tweaking the prompt
+- For close-up/passport photos: describe facial animation (laughing, blinking, head tilt)
+- Avoid vague terms like "dynamic" — describe the actual movement
+- Changing seed often produces more variation than tweaking the prompt
+
+---
+
+## Custom Node: RemoveBackgroundRembg
+
+Source: `custom_nodes/rembg_node/__init__.py`
+
+This node is registered as `RemoveBackgroundRembg` (not `RemoveBackground`) to avoid a name collision with the built-in ComfyUI background removal node added in ComfyUI commit `0d8b7510`. The built-in node outputs only a MASK and requires a separately loaded model — our node uses rembg directly and outputs both IMAGE and MASK.
+
+| | Built-in (`RemoveBackground`) | Ours (`RemoveBackgroundRembg`) |
+|--|--|--|
+| Input | `bg_removal_model` + `image` | `image` + `model` name |
+| Output | MASK only | IMAGE + MASK |
+| Backend | ComfyUI bg_removal_model | rembg (ONNX) |
+| Model download | manual (models/background_removal/) | automatic (~/.u2net/) |
 
 ---
 
@@ -260,20 +330,80 @@ static, frozen, lifeless expression, morphing face, multiple faces
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `ValueError: This gguf file is incompatible with llama.cpp` | Using city96's `CLIPLoaderGGUF` on a calcuis GGUF file | Switch to calcuis's `ClipLoaderGGUF` node |
-| `AttributeError: vae has no attribute downscale_index_formula` | Using `LTXVImgToVideoConditionOnly` from the plugin | Use core `LTXVImgToVideo` instead |
-| `CUDA out of memory` | Too many frames for 12GB VRAM | Reduce length: try 177 or 201 frames |
-| VAE node not found / `VaeGGUF` missing | calcuis-gguf not loaded | Restart ComfyUI; check terminal for import errors |
-| Video output is static / no motion | Prompt doesn't describe motion explicitly | Add specific movement descriptors to positive prompt |
+| `ValueError: This gguf file is incompatible with llama.cpp` | Using city96 `CLIPLoaderGGUF` on a calcuis GGUF | Workflow uses calcuis `ClipLoaderGGUF` (lowercase l) — don't swap nodes |
+| `AttributeError: vae has no attribute downscale_index_formula` | Using `LTXVImgToVideoConditionOnly` from the plugin | Workflow uses core `LTXVImgToVideo` instead |
+| `CUDA out of memory` | Too many frames | Reduce `length` to 177 or 97 |
+| `VaeGGUF` node not found | calcuis-gguf not loaded | Restart ComfyUI; check terminal for import errors |
+| HTTP 400 `list index out of range` on node 15 | `RemoveBackground` name clash with built-in ComfyUI node | Rename to `RemoveBackgroundRembg` (already done in this repo) |
+| Video output is static | Prompt doesn't describe motion | Add specific movement descriptors |
+| rembg model downloading on first run | Normal — 176MB one-time download | Wait ~5 min, cached to `~/.u2net/` after |
 
 ---
 
-## Exact Versions (Frozen)
+## File Structure
 
-See [SETUP_SNAPSHOT.md](SETUP_SNAPSHOT.md) for the full version table including all Python package versions and git commit hashes for every custom node.
+```
+comfy_local_setup/
+├── install.sh                          # Full native setup script
+├── docker-build.sh                     # Builds all 4 Docker images
+├── docker-compose.yml                  # Wires images + model volume
+├── queue_test.py                       # API script to queue scene+character workflow
+│
+├── workflows/                          # Source workflow JSONs (copied by install.sh)
+│   ├── ltxv_096_gguf_i2v.json
+│   ├── ltxv_096_gguf_i2v_dual_image.json
+│   └── ltxv_096_gguf_scene_character.json
+│
+├── custom_nodes/
+│   └── rembg_node/
+│       └── __init__.py                 # RemoveBackgroundRembg node
+│
+├── docker/
+│   ├── Dockerfile.base                 # CUDA 12.1 + Python 3.10
+│   ├── Dockerfile.comfyui              # + ComfyUI + PyTorch
+│   ├── Dockerfile.nodes                # + all custom nodes + rembg
+│   └── Dockerfile.app                 # + workflows + entrypoint
+│
+└── docs/
+    ├── USER_GUIDE.md
+    ├── DUAL_IMAGE_GUIDE.md
+    └── FINETUNE_GUIDE.md
+```
 
 ---
 
-## Hardware
+## Why This Exists
 
-Tested on: RTX 3060 12GB, Ubuntu 22.04, CUDA 12.1, PyTorch 2.5.1
+The official [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) plugin ships example workflows targeting the **LTX-2 / LTX-2.3 series** — a 19B parameter model requiring 40GB+ VRAM. Those workflows use completely different nodes and will not work with the 2B GGUF model.
+
+This setup uses **ltxv-2b-0.9.6** quantized to GGUF, runnable on a 12GB RTX 3060.
+
+| | Official workflows | This setup |
+|---|---|---|
+| Model | LTX-2 / LTX-2.3 (19B safetensors) | ltxv-2b-0.9.6 (2B GGUF) |
+| VRAM | 40GB+ | ~10–12GB |
+| Text encoder | Gemma 3 12B | T5-XXL Q4_0 GGUF |
+| UNet loader | CheckpointLoaderSimple | UnetLoaderGGUF (city96) |
+| CLIP loader | native CLIPLoader | ClipLoaderGGUF (calcuis) |
+| VAE loader | VAELoader (safetensors) | VaeGGUF (calcuis) |
+| Sampler | LTXVBaseSampler (GUIDER-based) | KSampler (core ComfyUI) |
+| I2V node | LTXVImgToVideoConditionOnly | LTXVImgToVideo (core ComfyUI) |
+
+### Why two CLIP loaders exist
+
+- **city96/ComfyUI-GGUF** (`CLIPLoaderGGUF`) — uses llama.cpp. Throws `ValueError: This gguf file is incompatible with llama.cpp!` on calcuis format files.
+- **calcuis/gguf** (`ClipLoaderGGUF`, lowercase l) — uses `gguf_connector`. Handles the `t5xxl_fp32-q4_0.gguf` in this setup.
+
+Both coexist without conflict because their registered node names differ.
+
+### Why core LTXVImgToVideo instead of the plugin's node
+
+`LTXVImgToVideoConditionOnly` accesses `vae.downscale_index_formula` — an attribute specific to the safetensors VAE object. A GGUF-loaded VAE from calcuis doesn't have it, causing `AttributeError` at runtime. The core node does the same job without accessing internal VAE attributes.
+
+---
+
+## Exact Versions
+
+See [SETUP_SNAPSHOT.md](SETUP_SNAPSHOT.md) for all Python package versions and git commit hashes for every custom node.
+
+**Hardware tested on:** RTX 3060 12GB, Ubuntu 22.04, CUDA 12.1, PyTorch 2.5.1
