@@ -1,0 +1,32 @@
+services:
+  comfyui:
+    image: comfyui-ltxv-app:latest
+    container_name: comfyui-ltxv
+    ports:
+      - "8188:8188"
+    volumes:
+      # Mount your local models directory — set MODELS_DIR in .env or export it
+      - ${MODELS_DIR:-./models}:/app/ComfyUI/models
+      # Persist generated videos across container restarts
+      - comfyui-output:/app/ComfyUI/output
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8188/system_stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  comfyui-output:
+    driver: local
