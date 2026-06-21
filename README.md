@@ -6,6 +6,14 @@ A working ComfyUI workflow for generating 10-second videos from a single image u
 
 ## Quick Start
 
+> **This is the `feature/bg-removal-compositing` branch.**
+> It includes automatic background removal for the character + scene workflow.
+> Clone this branch specifically:
+> ```bash
+> git clone -b feature/bg-removal-compositing \
+>     https://github.com/lakshmikanthgr/comfy_local_setup.git
+> ```
+
 ### Option A — Docker (recommended, fully portable)
 
 > **Requirements**: Docker, [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html), GPU 10GB+ VRAM
@@ -35,12 +43,22 @@ The workflow `ltxv_096_gguf_i2v` appears in the workflow browser automatically.
 > **Requirements**: Linux, Python 3.10+, CUDA 12.1, GPU 10GB+ VRAM
 
 ```bash
-git clone https://github.com/lakshmikanthgr/comfy_local_setup.git
+# Clone this specific branch
+git clone -b feature/bg-removal-compositing \
+    https://github.com/lakshmikanthgr/comfy_local_setup.git
 cd comfy_local_setup
+
+# Run the installer — handles system packages, venv, all custom nodes,
+# rembg, workflows, and runs a verification check at the end
 bash install.sh
-# Download models, then:
+
+# Download 3 model files (see installer output for exact paths)
+# Then start:
 cd comfyui-ltxv && source venv/bin/activate && python main.py --listen
 ```
+
+The installer prints a pass/fail check for every component at the end.
+If any check fails, fix it before starting ComfyUI.
 
 ---
 

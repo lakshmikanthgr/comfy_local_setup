@@ -2,6 +2,9 @@
 # Builds all 4 images in order. Each layer caches independently.
 # Usage: bash docker-build.sh
 # Re-run after any Dockerfile change — only changed layers rebuild.
+#
+# Includes: background removal node (rembg_node), all 3 workflows,
+# all custom nodes pinned to exact commits.
 
 set -e
 
