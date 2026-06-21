@@ -77,7 +77,7 @@
     },
     {
       "id": 16,
-      "type": "RemoveBackground",
+      "type": "RemoveBackgroundRembg",
       "pos": [430, 400],
       "size": [280, 80],
       "flags": {},

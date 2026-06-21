@@ -42,5 +42,5 @@ class RemoveBackground:
         return (torch.stack(out_images), torch.stack(out_masks))
 
 
-NODE_CLASS_MAPPINGS = {"RemoveBackground": RemoveBackground}
-NODE_DISPLAY_NAME_MAPPINGS = {"RemoveBackground": "Remove Background (rembg)"}
+NODE_CLASS_MAPPINGS = {"RemoveBackgroundRembg": RemoveBackground}
+NODE_DISPLAY_NAME_MAPPINGS = {"RemoveBackgroundRembg": "Remove Background (rembg)"}
